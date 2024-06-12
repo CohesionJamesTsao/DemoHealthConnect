@@ -1,6 +1,6 @@
 import React from 'react';
 import { Dimensions, LogBox, ScrollView, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-import { initialize, requestPermission, getGrantedPermissions, readRecords } from 'react-native-health-connect';
+import { initialize, requestPermission, getGrantedPermissions, readRecords, revokeAllPermissions } from 'react-native-health-connect';
 const { width, height } = Dimensions.get('window');
 LogBox.ignoreAllLogs();
 
@@ -36,40 +36,10 @@ const initializeHealthConnect = async () => {
 };
 
 const permissions = [
-  {
-    accessType: 'read',
-    recordType: 'ActiveCaloriesBurned',
-  },
-  {
-    accessType: 'write',
-    recordType: 'ActiveCaloriesBurned',
-  },
   { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
+  { accessType: 'read', recordType: 'ActiveCaloriesBurned' }
 
 ];
-
-//請求權限
-const requestPermissions = ()=>{
-  return requestPermission(permissions, 'com.google.android.apps.healthdata')
-  // return new Promise(resolve => {
-  //   getGrantedPermissions().then((permissions) => {
-  //     // console.log('Granted permissions ', permissions.length);
-  //     resolve(permissions.length > 0);
-
-  //   });
-
-  // }).then((isPermission) => {
-  //   // console.log('isPermission', isPermission);
-  //   if (!isPermission) {
-  //     requestPermission(permissions, 'com.google.android.apps.healthdata')
-  //     return 'yes'
-  //   } else {
-  //    return 'yes'
-  //   }
-  // });
-
-
-};
 
 class APP extends React.Component {
   constructor(props) {
@@ -79,6 +49,8 @@ class APP extends React.Component {
     };
     this.readGrantedPermissions = this.readGrantedPermissions.bind(this);
     this.readSampleData = this.readSampleData.bind(this);
+    this.requestPermissions2=this.requestPermissions2.bind(this);
+    this.revokeAllPermissions = this.revokeAllPermissions.bind(this);
     
   }
 
@@ -109,31 +81,27 @@ class APP extends React.Component {
     initializeHealthConnect();
     // requestPermissions();
   }
-  async requestPermissions() {
-    // requestPermission([
-    //   { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
-    // ])
-    //   .then(grantedPermissions => {
-    //     console.log('Granted permissions1:', grantedPermissions);
-    //   })
-    //   .catch(error => {
-    //     console.error('Error requesting permissions:', error);
-    //   });
-    const grantedPermissions = await requestPermission([
-      { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
-    ]);
-    console.log('Granted permissions2:', grantedPermissions);
+
+
+  async requestPermissions2() {
+    requestPermission(permissions)
+      .then(grantedPermissions => {
+        console.log('Granted permissions1:', grantedPermissions);
+      })
+      .catch(error => {
+        console.error('Error requesting permissions:', error);
+      });
   }
   
   render() {
       return (
         <View style={styles.bgContainer}>
-          <TouchableOpacity style={styles.button} onPress={()=>{
-            requestPermissions().then((res) => {
-              // console.log('Requesting permissions',res);
-            });
-          }}>
-            <Text style={styles.text}>Request Permissions</Text>
+          <TouchableOpacity style={styles.button} onPress={this.requestPermissions2}>
+            <Text style={styles.text}>Request Permissions2</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.button} onPress={revokeAllPermissions}>
+            <Text style={styles.text}>revokePermissions</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.button} onPress={this.readGrantedPermissions}>
