@@ -1,6 +1,6 @@
 import React from 'react';
 import { Dimensions, LogBox, ScrollView, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-import { initialize, requestPermission, getGrantedPermissions, readRecords, revokeAllPermissions } from 'react-native-health-connect';
+import { initialize, requestPermission, getGrantedPermissions, readRecords, revokeAllPermissions, getSdkStatus, aggregateRecord } from 'react-native-health-connect';
 const { width, height } = Dimensions.get('window');
 LogBox.ignoreAllLogs();
 
@@ -36,8 +36,13 @@ const initializeHealthConnect = async () => {
 };
 
 const permissions = [
+  { accessType: 'read', recordType: 'BloodGlucose' },
+  { accessType: 'read', recordType: 'BloodPressure' },
+  { accessType: 'read', recordType: 'HeartRate' },
+  { accessType: 'read', recordType: 'SleepSession' },
+  { accessType: 'read', recordType: 'Steps' },
+  { accessType: 'read', recordType: 'Weight' },
   { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
-  { accessType: 'read', recordType: 'ActiveCaloriesBurned' }
 
 ];
 
@@ -47,10 +52,14 @@ class APP extends React.Component {
     this.state = {
       hasError: false
     };
+    this.initializeHealthConnect = this.initializeHealthConnect.bind(this);
     this.readGrantedPermissions = this.readGrantedPermissions.bind(this);
     this.readSampleData = this.readSampleData.bind(this);
     this.requestPermissions2=this.requestPermissions2.bind(this);
-    this.revokeAllPermissions = this.revokeAllPermissions.bind(this);
+    this.getSdkStatus=this.getSdkStatus.bind(this);
+    this.aggregateRecord=this.aggregateRecord.bind(this);
+
+
     
   }
 
@@ -59,28 +68,52 @@ class APP extends React.Component {
   //檢查權限
   readGrantedPermissions (){
     getGrantedPermissions().then((permissions) => {
-      console.log('Granted permissions ', permissions.length);
+      console.log('Granted permissions ', permissions);
 
     });
   };
 
   //取得數據
-  readSampleData (){
-    readRecords('ActiveCaloriesBurned', {
+  readSampleData (type){
+    // readRecords('Steps', {
+    // readRecords('ActiveCaloriesBurned', {
+    readRecords('BloodGlucose', {
+    // readRecords('BloodPressure', {
+    // readRecords('Weight', {
+    // readRecords('SleepSession', {
+    // readRecords('HeartRate', {
       timeRangeFilter: {
         operator: 'between',
         startTime: '2023-01-09T12:00:00.405Z',
         endTime: '2024-07-01T23:53:15.405Z',
       },
     }).then((result) => {
-      console.log('Retrieved records: ', JSON.stringify({ result }, null, 2)); // Retrieved records:  {"result":[{"startTime":"2023-01-09T12:00:00.405Z","endTime":"2023-01-09T23:53:15.405Z","energy":{"inCalories":15000000,"inJoules":62760000.00989097,"inKilojoules":62760.00000989097,"inKilocalories":15000},"metadata":{"id":"239a8cfd-990d-42fc-bffc-c494b829e8e1","lastModifiedTime":"2023-01-17T21:06:23.335Z","clientRecordId":null,"dataOrigin":"com.healthconnectexample","clientRecordVersion":0,"device":0}}]}
+      console.log('Retrieved records1: ',JSON.stringify(result));
+
     });
   };
+  //取得聚合數據
+  aggregateRecord(){
+    aggregateRecord({
+      recordType: 'BloodGlucose',
+      timeRangeFilter: {
+        operator: 'between',
+        startTime: '2024-06-12T00:00:00.000Z',
+        endTime: '2024-07-01T23:53:15.405Z',
+      },
+    }).then((result) => {
+      console.log('Aggregated records: ', result); // Aggregated records:  {"result":{"totalSteps":10000,"totalDistance":10000,"totalEnergy":{"inCalories":15000000,"inJoules":62760000.00989097,"inKilojoules":62760.00000989097,"inKilocalories":15000}}}
+    });
+  }
 
   async componentDidMount() {
     initializeHealthConnect();
-    // requestPermissions();
   }
+
+  async initializeHealthConnect (){
+    const isInitialized = await initialize();
+    console.log({ isInitialized });
+  };
 
 
   async requestPermissions2() {
@@ -92,10 +125,19 @@ class APP extends React.Component {
         console.error('Error requesting permissions:', error);
       });
   }
+
+  async getSdkStatus() {
+    getSdkStatus().then((status) => {
+      console.log('SDK status:', status);
+    });
+  }
   
   render() {
       return (
         <View style={styles.bgContainer}>
+          <TouchableOpacity style={styles.button} onPress={this.initializeHealthConnect}>
+            <Text style={styles.text}>initialize</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.button} onPress={this.requestPermissions2}>
             <Text style={styles.text}>Request Permissions2</Text>
           </TouchableOpacity>
@@ -104,12 +146,20 @@ class APP extends React.Component {
             <Text style={styles.text}>revokePermissions</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity style={styles.button} onPress={this.getSdkStatus}>
+            <Text style={styles.text}>getSdkStatus</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.button} onPress={this.readGrantedPermissions}>
             <Text style={styles.text}>current Permissions</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.button} onPress={this.readSampleData}>
-            <Text style={styles.text}>calories</Text>
+            <Text style={styles.text}>readSampleData</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.button} onPress={this.aggregateRecord}>
+            <Text style={styles.text}>aggregateRecord</Text>
           </TouchableOpacity>
         </View>
       );
