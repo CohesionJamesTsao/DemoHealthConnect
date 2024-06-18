@@ -1,6 +1,6 @@
 import React from 'react';
 import { Dimensions, LogBox, ScrollView, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-import { initialize, requestPermission, getGrantedPermissions, readRecord, readRecords, revokeAllPermissions, getSdkStatus, aggregateRecord ,insertRecords} from 'react-native-health-connect';
+import { initialize, requestPermission, getGrantedPermissions, readRecord, readRecords, revokeAllPermissions, getSdkStatus, aggregateRecord, insertRecords, RelationToMeal, MealType, SpecimenSource, SleepStageType } from 'react-native-health-connect';
 const { width, height } = Dimensions.get('window');
 LogBox.ignoreAllLogs();
 
@@ -21,6 +21,7 @@ const styles = StyleSheet.create({
     display: 'flex',
   },
   button: {
+    margin: 5,
     width:200,
     height: 50,
     backgroundColor: 'red',
@@ -33,6 +34,15 @@ const styles = StyleSheet.create({
     width: 100,
     height: 50,
     backgroundColor: 'blue',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  button3: {
+    margin: 5,
+    width: 100,
+    height: 50,
+    backgroundColor: 'orange',
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center'
@@ -56,10 +66,14 @@ const permissions = [
   { accessType: 'read', recordType: 'HeartRate' },
   { accessType: 'read', recordType: 'SleepSession' },
   { accessType: 'read', recordType: 'Steps' },
-  { accessType: 'write', recordType: 'Steps' },
-
   { accessType: 'read', recordType: 'Weight' },
-  { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
+  
+  { accessType: 'write', recordType: 'BloodGlucose' },
+  { accessType: 'write', recordType: 'BloodPressure' },
+  { accessType: 'write', recordType: 'HeartRate' },
+  { accessType: 'write', recordType: 'SleepSession' },
+  { accessType: 'write', recordType: 'Weight' },
+  { accessType: 'write', recordType: 'Steps' },
 
 ];
 
@@ -74,11 +88,10 @@ class APP extends React.Component {
     };
     this.initializeHealthConnect = this.initializeHealthConnect.bind(this);
     this.readGrantedPermissions = this.readGrantedPermissions.bind(this);
-    this.writeSampleData = this.writeSampleData.bind(this);
     this.requestPermissions2=this.requestPermissions2.bind(this);
     this.getSdkStatus=this.getSdkStatus.bind(this);
     this.aggregateRecord=this.aggregateRecord.bind(this);
-
+    this.writeSteps=this.writeSteps.bind(this);
 
     
   }
@@ -93,19 +106,217 @@ class APP extends React.Component {
     });
   };
 
-  //寫入數據
-  writeSampleData (type){
-    const sampleData = [
-      {
-        recordType: 'Steps',
-        startTime: '2024-05-10T12:00:00.405Z',
-        endTime: '2024-05-10T12:15:00.405Z',
-        count: 100,
-      }
-    ];
+  //寫入步數
+  writeSteps(){
+    const getRandDate = (start, end) => {
+      return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+    }
 
-    insertRecords(sampleData).then((result) => {
-      console.log('Inserted records1: ',JSON.stringify(result));
+    const getRandCount = () => {
+      return Math.floor(Math.random() * 10000);
+    }
+
+    const startDate = new Date('2024-05-19T00:00:00.405Z');
+    const endDate = new Date('2024-06-17T23:59:59.405Z');
+    const data = [];
+
+    for (let i = 0; i < 100; i++) {
+      const startTime = getRandDate(startDate, endDate);
+      const endTime = new Date(startTime.getTime());
+      endTime.setMinutes(startTime.getMinutes() + 1);
+      data.push({
+        recordType: 'Steps',
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        count: getRandCount(),
+      });
+    }
+
+    insertRecords(data).then((result) => {
+      console.log('Insert Steps: ', JSON.stringify(result));
+    });
+  };
+
+  
+  //寫入血糖
+  writeBloodGlucose = () => {
+    const getRandDate = (start, end) => {
+      return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+    }
+
+    const getRandValue = (min, max) => {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    const startDate = new Date('2024-05-01T00:00:00.405Z');
+    const endDate = new Date('2024-06-17T23:59:59.405Z');
+    const data = [];
+
+    for (let i = 0; i < 100; i++) {
+      const time = getRandDate(startDate, endDate);
+      const value = getRandValue(10, 50);
+      data.push({
+        recordType: 'BloodGlucose',
+        time: time.toISOString(),
+        level: {
+          value: value,
+          unit: 'millimolesPerLiter'
+        },
+        RelationToMeal: RelationToMeal.BEFORE_MEAL,
+        MealType: MealType.BREAKFAST,
+        SpecimenSource: SpecimenSource.CAPILLARY_BLOOD,
+      });
+    }
+
+    insertRecords(data).then((result) => {
+      console.log('Inserted BloodGlucose: ', JSON.stringify(result));
+    });
+  };
+
+  //寫入血壓
+  writeBloodPressure = () => {
+    const getRandDate = (start, end) => {
+      return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+    }
+
+    const getRandValue = (min, max) => {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    const startDate = new Date('2024-05-01T00:00:00.405Z');
+    const endDate = new Date('2024-06-17T23:59:59.405Z');
+    const data = [];
+
+    for (let i = 0; i < 100; i++) {
+      const time = getRandDate(startDate, endDate);
+      const systolicValue = getRandValue(80, 120);
+      const diastolicValue = getRandValue(80, 120);
+      data.push({
+        recordType: 'BloodPressure',
+        time: time.toISOString(),
+        systolic: {
+          value: systolicValue,
+          unit: 'millimetersOfMercury'
+        },
+        diastolic: {
+          value: diastolicValue,
+          unit: 'millimetersOfMercury'
+        },
+        bodyPosition: 1,
+        measurementLocation: 1,
+      });
+    }
+
+    insertRecords(data).then((result) => {
+      console.log('Inserted BloodPressure: ', JSON.stringify(result));
+    });
+  };
+  //寫入體重
+  writeWeight = () => {
+    const getRandDate = (start, end) => {
+      return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+    }
+
+    const getRandValue = (min, max) => {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    const startDate = new Date('2024-05-01T00:00:00.405Z');
+    const endDate = new Date('2024-06-17T23:59:59.405Z');
+    const data = [];
+
+    for (let i = 0; i < 100; i++) {
+      const time = getRandDate(startDate, endDate);
+      const weightValue = getRandValue(50, 100);
+      data.push({
+        recordType: 'Weight',
+        time: time.toISOString(),
+        weight: {
+          value: weightValue,
+          unit: 'kilograms'
+        },
+      });
+    }
+
+    insertRecords(data).then((result) => {
+      console.log('Inserted Weight: ', JSON.stringify(result));
+    });
+  };
+
+  //寫入心率
+  writeHeartRate = () => {
+    const getRandDate = (start, end) => {
+      return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+    }
+
+    const getRandValue = (min, max) => {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    const startDate = new Date('2024-05-01T00:00:00.405Z');
+    const endDate = new Date('2024-06-17T23:59:59.405Z');
+    const data = [];
+
+    for (let i = 0; i < 100; i++) {
+      const startTime = getRandDate(startDate, endDate);
+      const endTime = new Date(startTime.getTime());
+      endTime.setMinutes(startTime.getMinutes() + 1);
+      const time = getRandDate(startTime, endTime);
+      const beatsPerMinute = getRandValue(50, 100);
+      data.push({
+        recordType: 'HeartRate',
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        samples: [{
+          time: time.toISOString(),
+          beatsPerMinute: beatsPerMinute
+        }]
+      });
+    }
+
+    insertRecords(data).then((result) => {
+      console.log('Inserted HeartRate: ', JSON.stringify(result));
+    });
+  };
+  //寫入睡眠
+  writeSleep = () => {
+    const startDate = new Date('2024-05-01T00:00:00.405Z');
+    const endDate = new Date('2024-06-17T23:59:59.405Z');
+    const data = [];
+    const sleepStages = [SleepStageType.AWAKE, SleepStageType.LIGHT, SleepStageType.DEEP]
+
+    const dateDiffInDays = (a, b) => {
+      const MS_PER_DAY = 1000 * 60 * 60 * 24;
+      const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+      const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+
+      return Math.floor((utc2 - utc1) / MS_PER_DAY);
+    }
+
+    const days = dateDiffInDays(startDate, endDate);
+
+    for (let i = 0; i <= days; i++) {
+      const startTime = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000); // each day
+      const endTime = new Date(startTime.getTime() + 8 * 60 * 60 * 1000); // 8 hours later
+      const stages = sleepStages.map((stage, index) => {
+        const stageStartTime = new Date(startTime.getTime() + index * 60 * 60 * 1000); // each stage lasts 1 hour
+        const stageEndTime = new Date(stageStartTime.getTime() + 60 * 60 * 1000); // 1 hour later
+        return {
+          stage: stage,
+          startTime: stageStartTime.toISOString(),
+          endTime: stageEndTime.toISOString()
+        };
+      });
+      data.push({
+        recordType: 'SleepSession',
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        stages: stages
+      });
+    }
+
+    insertRecords(data).then((result) => {
+      console.log('Inserted Sleep: ', JSON.stringify(result));
     });
   };
 
@@ -302,11 +513,35 @@ class APP extends React.Component {
           <TouchableOpacity style={styles.button} onPress={this.readGrantedPermissions}>
             <Text style={styles.text}>current Permissions</Text>
           </TouchableOpacity>
+          <Text>Write</Text>
 
-          <TouchableOpacity style={styles.button} onPress={this.writeSampleData}>
-            <Text style={styles.text}>writeSampleData</Text>
-          </TouchableOpacity>
-
+          <View>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity style={styles.button3} onPress={this.writeSteps}>
+                <Text style={styles.text}>Steps</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.button3} onPress={this.writeBloodGlucose}>
+                <Text style={styles.text}>Blood</Text>
+                <Text style={styles.text}>Glucose</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.button3} onPress={this.writeBloodPressure}>
+                <Text style={styles.text}>Blood</Text>
+                <Text style={styles.text}>Pressure</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity style={styles.button3} onPress={this.writeWeight}>
+                <Text style={styles.text}>Weight</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.button3} onPress={this.writeSleep}>
+                <Text style={styles.text}>Sleep</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.button3} onPress={this.writeHeartRate}>
+                <Text style={styles.text}>HeartRate</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          <Text>Read</Text>
           <View>
             <View style={styles.buttonContainer}>
               <TouchableOpacity style={styles.button2} onPress={this.readSteps}>
